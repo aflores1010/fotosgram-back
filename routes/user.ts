@@ -1,12 +1,14 @@
 import { Router, Request, Response} from 'express';
 import { User } from '../models/user';
 import bcrypt from 'bcrypt';
+import { Token } from '../classes/token';
+import { verifyToken } from '../middlewares/authentication';
 
 const userRoutes = Router();
 
 // login
 userRoutes.post('/login', (req, resp) =>{
-    console.log('request', req);
+    // console.log('request', req);
     const body = req.body;
     User.findOne({email: body.email}, (err, userDb) =>{
         if(err) throw err;
@@ -19,10 +21,18 @@ userRoutes.post('/login', (req, resp) =>{
         }
 
         if (userDb.comparePassword(body.password)) {
+
+            const tokenUser = Token.getJwtToken({
+                _id: userDb._id,
+                name: userDb.name,
+                email: userDb.email,
+                avatar: userDb.avatar
+            });
+
             return resp.json({
                 ok: true,
-                token: 'asdkjfadskfjaskdlfafkalfjaklf'
-            })
+                token: tokenUser
+            });
         } else {
             return resp.json({
                 ok: false,
@@ -34,7 +44,7 @@ userRoutes.post('/login', (req, resp) =>{
 });
 
 userRoutes.post('/create', (req: Request, res: Response)=>{
-    console.log('req' , req);
+    // console.log('req' , req);
     const user = {
         name: req.body.name,
         email: req.body.email,
@@ -43,10 +53,19 @@ userRoutes.post('/create', (req: Request, res: Response)=>{
     }
 
     User.create(user).then( userDb => {
-        res.json({
+
+        const tokenUser = Token.getJwtToken({
+            _id: userDb._id,
+            name: userDb.name,
+            email: userDb.email,
+            avatar: userDb.avatar
+        });
+
+        return res.json({
             ok: true,
-            user: userDb
-        })
+            token: tokenUser
+        });
+
     }).catch((err) => {
         res.json({
             ok: false,
@@ -54,6 +73,39 @@ userRoutes.post('/create', (req: Request, res: Response)=>{
         })
     }) ;
 
+
+});
+
+userRoutes.post('/update', verifyToken , (req: any, res: Response)=>{
+    // console.log('request from route', req.user);
+    // console.log('request from route test', req.body.user);
+    const user = {
+        name: req.body.name || req.user.name,
+        email: req.body.email || req.user.email,
+        // password: bcrypt.hashSync(req.body.password, 10),
+        avatar: req.body.avatar || req.user.avatar
+    }
+
+    User.findByIdAndUpdate(req.user._id, user, { new: true} , (err, userDb) => {
+        if (err) throw err;
+        if (!userDb) {
+            res.json({
+                ok: false,
+                message: 'No existe el usuario '
+            });
+        } else {
+            const tokenUser = Token.getJwtToken({
+                _id: userDb._id,
+                name: userDb.name,
+                email: userDb.email,
+                avatar: userDb.avatar
+            });
+            res.json({
+                ok: true,
+                message: tokenUser
+            });
+        }
+    })
 
 });
 

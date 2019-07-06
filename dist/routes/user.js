@@ -6,10 +6,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const user_1 = require("../models/user");
 const bcrypt_1 = __importDefault(require("bcrypt"));
+const token_1 = require("../classes/token");
+const authentication_1 = require("../middlewares/authentication");
 const userRoutes = express_1.Router();
 // login
 userRoutes.post('/login', (req, resp) => {
-    console.log('request', req);
+    // console.log('request', req);
     const body = req.body;
     user_1.User.findOne({ email: body.email }, (err, userDb) => {
         if (err)
@@ -21,9 +23,15 @@ userRoutes.post('/login', (req, resp) => {
             });
         }
         if (userDb.comparePassword(body.password)) {
+            const tokenUser = token_1.Token.getJwtToken({
+                _id: userDb._id,
+                name: userDb.name,
+                email: userDb.email,
+                avatar: userDb.avatar
+            });
             return resp.json({
                 ok: true,
-                token: 'asdkjfadskfjaskdlfafkalfjaklf'
+                token: tokenUser
             });
         }
         else {
@@ -35,7 +43,7 @@ userRoutes.post('/login', (req, resp) => {
     });
 });
 userRoutes.post('/create', (req, res) => {
-    console.log('req', req);
+    // console.log('req' , req);
     const user = {
         name: req.body.name,
         email: req.body.email,
@@ -43,15 +51,53 @@ userRoutes.post('/create', (req, res) => {
         avatar: req.body.avatar
     };
     user_1.User.create(user).then(userDb => {
-        res.json({
+        const tokenUser = token_1.Token.getJwtToken({
+            _id: userDb._id,
+            name: userDb.name,
+            email: userDb.email,
+            avatar: userDb.avatar
+        });
+        return res.json({
             ok: true,
-            user: userDb
+            token: tokenUser
         });
     }).catch((err) => {
         res.json({
             ok: false,
             user: err
         });
+    });
+});
+userRoutes.post('/update', authentication_1.verifyToken, (req, res) => {
+    // console.log('request from route', req.user);
+    // console.log('request from route test', req.body.user);
+    const user = {
+        name: req.body.name || req.user.name,
+        email: req.body.email || req.user.email,
+        // password: bcrypt.hashSync(req.body.password, 10),
+        avatar: req.body.avatar || req.user.avatar
+    };
+    user_1.User.findByIdAndUpdate(req.user._id, user, { new: true }, (err, userDb) => {
+        if (err)
+            throw err;
+        if (!userDb) {
+            res.json({
+                ok: false,
+                message: 'No existe el usuario '
+            });
+        }
+        else {
+            const tokenUser = token_1.Token.getJwtToken({
+                _id: userDb._id,
+                name: userDb.name,
+                email: userDb.email,
+                avatar: userDb.avatar
+            });
+            res.json({
+                ok: true,
+                message: tokenUser
+            });
+        }
     });
 });
 userRoutes.get('/test2', (req, res) => {
