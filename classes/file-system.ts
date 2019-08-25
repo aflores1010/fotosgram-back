@@ -81,4 +81,19 @@ export class FileSystem {
 
     }
 
+
+   public getImageUrl(userId: string, img: string) {
+       // path de los post
+
+       const pathPhoto = path.resolve(__dirname, '../uploads/', userId , 'posts',  img);
+       // verificAR SI imagen existe
+       const exist = fs.existsSync(pathPhoto);
+       if (!exist) {
+           // retornar imagen por defecto que debe estar almacenada en assets
+           return path.resolve(__dirname, '../assets/no-image.jpg');
+       }
+       // return del path foto
+       return pathPhoto;
+   }
+
 }

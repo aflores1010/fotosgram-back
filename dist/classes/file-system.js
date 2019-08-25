@@ -62,5 +62,17 @@ class FileSystem {
     getTempImages(pathTemp) {
         return fs_1.default.readdirSync(pathTemp) || [];
     }
+    getImageUrl(userId, img) {
+        // path de los post
+        const pathPhoto = path_1.default.resolve(__dirname, '../uploads/', userId, 'posts', img);
+        // verificAR SI imagen existe
+        const exist = fs_1.default.existsSync(pathPhoto);
+        if (!exist) {
+            // retornar imagen por defecto que debe estar almacenada en assets
+            return path_1.default.resolve(__dirname, '../assets/no-image.jpg');
+        }
+        // return del path foto
+        return pathPhoto;
+    }
 }
 exports.FileSystem = FileSystem;

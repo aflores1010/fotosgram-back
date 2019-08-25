@@ -116,4 +116,12 @@ userRoutes.get('/test2', (req: Request, res: Response)=>{
     })
 });
 
+userRoutes.get('/', [verifyToken], (req: any, res: Response) =>{
+    const user = req.user;
+    res.json({
+        ok: true,
+        user: user
+    })
+});
+
 export default userRoutes;

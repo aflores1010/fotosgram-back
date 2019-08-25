@@ -82,4 +82,11 @@ postRoutes.post('/upload', [authentication_1.verifyToken], (req, resp) => __awai
         message: 'ok'
     });
 }));
+postRoutes.get('/image/:userId/:img', (req, res) => {
+    const userId = req.params.userId;
+    const img = req.params.img;
+    const fileSystem = new file_system_1.FileSystem();
+    const imgPath = fileSystem.getImageUrl(userId, img);
+    res.sendFile(imgPath);
+});
 exports.default = postRoutes;
